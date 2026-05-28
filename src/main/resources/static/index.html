@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Aforo Control - Prototipo Inteligente</title>
+    <link rel="stylesheet" href="styles.css">
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="glass-bg"></div>
+    <div class="app-container">
+        
+        <!-- 1. LOGIN VIEW -->
+        <main id="login-view" class="card fade-in">
+            <header class="login-header">
+                <div class="logo">
+                    <span class="pulse-dot"></span>
+                    <h1>AforoIoT</h1>
+                </div>
+                <p>Prototipo de Control de Aforo y Rentabilidad para Negocios</p>
+            </header>
+            
+            <section class="login-body">
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="username">Usuario / Correo Electrónico</label>
+                        <input type="text" id="username" placeholder="ejemplo@correo.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input type="password" id="password" placeholder="••••••••" required>
+                    </div>
+                    <div id="login-error" class="error-msg hidden"></div>
+                    <button type="submit" id="btn-login" class="btn btn-primary">Iniciar Sesión</button>
+                </form>
+            </section>
+            
+            <footer class="login-footer">
+                <p>Credenciales de Prueba en walkthrough.md</p>
+            </footer>
+        </main>
+
+        <!-- 2. MAIN DASHBOARD VIEW -->
+        <div id="dashboard-view" class="hidden fade-in">
+            <!-- Header común del dashboard -->
+            <header class="dashboard-header card">
+                <div class="header-info">
+                    <h2 id="dashboard-title">Panel de Control</h2>
+                    <span id="user-badge" class="badge">Rol</span>
+                </div>
+                <div class="header-actions">
+                    <span id="welcome-msg">Bienvenido</span>
+                    <button id="btn-logout" class="btn btn-secondary">Cerrar Sesión</button>
+                </div>
+            </header>
+
+            <!-- CONTENIDO MULTI-ROL -->
+            <main class="dashboard-grid">
+                
+                <!-- A. VISTA ADMINISTRADOR (MASTER & SUBORDINADO) -->
+                <div id="admin-panel" class="grid-span-12 hidden">
+                    <div class="admin-sections-grid">
+                        
+                        <!-- Panel de Creación de Negocios y Parámetros -->
+                        <section class="card">
+                            <h3>Gestión de Negocios</h3>
+                            <p class="subtitle">Registrar nuevos negocios en el sistema</p>
+                            
+                            <form id="create-business-form">
+                                <div class="form-group">
+                                    <label for="biz-name">Nombre del Negocio</label>
+                                    <input type="text" id="biz-name" placeholder="Ej. Tienda de Ropa Ronyc" required>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-6">
+                                        <label for="biz-max">Aforo Máximo</label>
+                                        <input type="number" id="biz-max" min="1" placeholder="Ej. 10" required>
+                                    </div>
+                                    <div class="form-group col-6">
+                                        <label for="biz-min">Mínimo Ganancia</label>
+                                        <input type="number" id="biz-min" min="0" placeholder="Ej. 3" required>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Registrar Negocio</button>
+                            </form>
+
+                            <hr class="divider">
+
+                            <h3>Lista de Negocios</h3>
+                            <div class="table-container">
+                                <table id="businesses-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Nombre</th>
+                                            <th>Aforo Máx.</th>
+                                            <th>Mín. Rentable</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Dinámico -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </section>
+
+                        <!-- Panel de Creación de Usuarios (Condicional según rol) -->
+                        <section class="card">
+                            <h3>Gestión de Usuarios</h3>
+                            <p class="subtitle">Crear cuentas del sistema</p>
+                            
+                            <form id="create-user-form">
+                                <div class="form-group">
+                                    <label for="new-username">Usuario / Correo</label>
+                                    <input type="text" id="new-username" placeholder="ejemplo@correo.com" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-password">Contraseña</label>
+                                    <input type="password" id="new-password" placeholder="••••••••" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="new-role">Rol de la Cuenta</label>
+                                    <select id="new-role" required>
+                                        <option value="USER">Dueño de Negocio (USER)</option>
+                                        <!-- Solo visible para MASTER_ADMIN -->
+                                        <option id="opt-role-admin" value="ADMIN" class="hidden">Administrador Subordinado (ADMIN)</option>
+                                    </select>
+                                </div>
+                                <div class="form-group" id="user-business-select-group">
+                                    <label for="new-user-business">Asociar a Negocio</label>
+                                    <select id="new-user-business">
+                                        <option value="">-- Seleccionar Negocio --</option>
+                                        <!-- Dinámico -->
+                                    </select>
+                                    <span class="help-text">Requerido si es Dueño de Negocio</span>
+                                </div>
+                                <div id="user-creation-error" class="error-msg hidden"></div>
+                                <div id="user-creation-success" class="success-msg hidden">Usuario creado exitosamente.</div>
+                                <button type="submit" class="btn btn-primary">Crear Cuenta</button>
+                            </form>
+                        </section>
+
+                    </div>
+                </div>
+
+                <!-- B. VISTA DUEÑO DE NEGOCIO (USER) -->
+                <div id="user-panel" class="grid-span-12 hidden">
+                    <div class="user-sections-grid">
+                        
+                        <!-- Panel de Monitoreo en Tiempo Real -->
+                        <section class="card monitoring-card">
+                            <h3 id="business-display-name">Mi Negocio</h3>
+                            <div class="aforo-display-container">
+                                <div class="aforo-circle-outer">
+                                    <div class="aforo-circle-inner">
+                                        <span id="current-count-display">0</span>
+                                        <span class="aforo-circle-label">Personas Adentro</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Barra de progreso lineal -->
+                            <div class="progress-bar-container">
+                                <div class="progress-label">
+                                    <span>Progreso del Aforo</span>
+                                    <span id="progress-percentage">0%</span>
+                                </div>
+                                <div class="progress-track">
+                                    <div id="progress-fill" class="progress-fill" style="width: 0%;"></div>
+                                </div>
+                            </div>
+
+                            <!-- Métricas Rápidas -->
+                            <div class="metrics-grid">
+                                <div class="metric-box">
+                                    <span class="metric-title">Aforo Máximo</span>
+                                    <span id="metric-max" class="metric-value">0</span>
+                                </div>
+                                <div class="metric-box">
+                                    <span class="metric-title">Rentabilidad Mínima</span>
+                                    <span id="metric-min" class="metric-value">0</span>
+                                </div>
+                                <div class="metric-box">
+                                    <span class="metric-title">Total Entradas</span>
+                                    <span id="metric-entries" class="metric-value">0</span>
+                                </div>
+                                <div class="metric-box">
+                                    <span class="metric-title">Total Salidas</span>
+                                    <span id="metric-exits" class="metric-value">0</span>
+                                </div>
+                            </div>
+
+                            <!-- Badges de Estado -->
+                            <div class="status-badges-container">
+                                <div id="badge-profitability" class="status-badge alert-success">Rentabilidad: Cumplida</div>
+                                <div id="badge-capacity" class="status-badge alert-danger">Aforo Lleno</div>
+                            </div>
+                        </section>
+
+                        <!-- Simulador del Sensor Arduino y Acciones -->
+                        <div class="interaction-column">
+                            
+                            <!-- Sensor Simulator -->
+                            <section class="card simulator-card">
+                                <h3><span class="pulse-dot active"></span> Simulador de Sensor Arduino</h3>
+                                <p class="subtitle">Simula los eventos físicos de personas cruzando el haz infrarrojo en la puerta.</p>
+                                
+                                <div class="simulator-buttons">
+                                    <button id="btn-sim-enter" class="btn btn-action-enter">
+                                        <span class="icon">➕</span>
+                                        Simular Entrada (In)
+                                    </button>
+                                    <button id="btn-sim-exit" class="btn btn-action-exit">
+                                        <span class="icon">➖</span>
+                                        Simular Salida (Out)
+                                    </button>
+                                </div>
+                            </section>
+
+                            <!-- Acciones de Fin de Día y Configuración -->
+                            <section class="card">
+                                <h3>Acciones de Operación</h3>
+                                <p class="subtitle">Control operativo al inicio/final del día laboral</p>
+                                
+                                <div class="action-buttons-stack">
+                                    <button id="btn-end-of-day" class="btn btn-warning">
+                                        📅 Ejecutar Cierre de Día
+                                    </button>
+                                    <button id="btn-reset-counts" class="btn btn-danger-outline">
+                                        🔄 Reiniciar Contadores Diarios
+                                    </button>
+                                </div>
+                            </section>
+
+                            <!-- Sección de Alertas Generadas -->
+                            <section class="card alerts-card">
+                                <h3>Alertas Activas</h3>
+                                <p class="subtitle">Notificaciones del sistema en tiempo real</p>
+                                
+                                <div id="alerts-container" class="alerts-list">
+                                    <!-- Dinámico -->
+                                    <div class="no-alerts">No hay alertas activas en este momento.</div>
+                                </div>
+                            </section>
+                        </div>
+
+                    </div>
+                </div>
+
+            </main>
+        </div>
+
+    </div>
+
+    <!-- Modal para editar parámetros de negocio -->
+    <div id="edit-business-modal" class="modal-overlay hidden">
+        <div class="modal card">
+            <h3>Configurar Parámetros</h3>
+            <p id="modal-biz-title">Negocio</p>
+            <form id="edit-business-form">
+                <input type="hidden" id="edit-biz-id">
+                <div class="form-group">
+                    <label for="edit-biz-max">Aforo Máximo</label>
+                    <input type="number" id="edit-biz-max" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-biz-min">Mínimo para Ganancias</label>
+                    <input type="number" id="edit-biz-min" min="0" required>
+                </div>
+                <div class="modal-buttons">
+                    <button type="button" id="btn-close-modal" class="btn btn-secondary">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Script de lógica de la aplicación -->
+    <script src="app.js"></script>
+</body>
+</html>

@@ -23,9 +23,9 @@ public class DataSeeder implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         // Crear cuenta maestra MASTER_ADMIN
-        String masterEmail = "aleytochambi09@gmail.com";
+        String masterEmail = "aleyto";
         if (userRepository.findByUsername(masterEmail).isEmpty()) {
-            User masterAdmin = new User(masterEmail, "aleyto9044865535", "MASTER_ADMIN", null);
+            User masterAdmin = new User(masterEmail, "123", "MASTER_ADMIN", null);
             userRepository.save(masterAdmin);
             System.out.println(">>> Sembrador: Cuenta Maestra MASTER_ADMIN creada (" + masterEmail + ")");
         }

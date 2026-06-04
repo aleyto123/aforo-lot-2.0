@@ -9,9 +9,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="glass-bg"></div>
+    <div id="toast-container" class="toast-container"></div>
     <div class="app-container">
         
         <!-- 1. LOGIN VIEW -->
@@ -46,6 +48,20 @@
 
         <!-- 2. MAIN DASHBOARD VIEW -->
         <div id="dashboard-view" class="hidden fade-in">
+            <button id="btn-menu" class="hamburger-btn" aria-label="Abrir menu de navegacion">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <aside id="sidebar" class="sidebar">
+                <nav class="sidebar-nav">
+                    <button class="sidebar-link active" data-section="control">Panel de Control</button>
+                    <button class="sidebar-link" data-section="history">Historial de Ingresos y Salidas</button>
+                    <button class="sidebar-link" data-section="stats">Grafica Estadistica Mensual</button>
+                </nav>
+            </aside>
+
             <!-- Header común del dashboard -->
             <header class="dashboard-header card">
                 <div class="header-info">
@@ -75,14 +91,18 @@
                                     <label for="biz-name">Nombre del Negocio</label>
                                     <input type="text" id="biz-name" placeholder="Ej. Tienda de Ropa Ronyc" required>
                                 </div>
+                                <div class="form-group">
+                                    <label for="biz-category">Categoría de Negocio</label>
+                                    <input type="text" id="biz-category" placeholder="Ej. BODEGA" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="biz-location">Sitio / Ubicación</label>
+                                    <select id="biz-location" required></select>
+                                </div>
                                 <div class="form-row">
                                     <div class="form-group col-6">
                                         <label for="biz-max">Aforo Máximo</label>
                                         <input type="number" id="biz-max" min="1" placeholder="Ej. 10" required>
-                                    </div>
-                                    <div class="form-group col-6">
-                                        <label for="biz-min">Mínimo Ganancia</label>
-                                        <input type="number" id="biz-min" min="0" placeholder="Ej. 3" required>
                                     </div>
                                 </div>
                                 <button type="submit" class="btn btn-primary">Registrar Negocio</button>
@@ -97,8 +117,9 @@
                                         <tr>
                                             <th>ID</th>
                                             <th>Nombre</th>
+                                            <th>Categoría</th>
+                                            <th>Departamento</th>
                                             <th>Aforo Máx.</th>
-                                            <th>Mín. Rentable</th>
                                             <th>Acciones</th>
                                         </tr>
                                     </thead>
@@ -139,6 +160,10 @@
                                     </select>
                                     <span class="help-text">Requerido si es Dueño de Negocio</span>
                                 </div>
+                                <div class="form-group">
+                                    <label for="new-user-min">Cantidad Mínima de Personas</label>
+                                    <input type="number" id="new-user-min" min="0" value="0" required>
+                                </div>
                                 <div id="user-creation-error" class="error-msg hidden"></div>
                                 <div id="user-creation-success" class="success-msg hidden">Usuario creado exitosamente.</div>
                                 <button type="submit" class="btn btn-primary">Crear Cuenta</button>
@@ -150,7 +175,8 @@
 
                 <!-- B. VISTA DUEÑO DE NEGOCIO (USER) -->
                 <div id="user-panel" class="grid-span-12 hidden">
-                    <div class="user-sections-grid">
+                    <section id="section-control" class="dashboard-section">
+                        <div class="user-sections-grid">
                         
                         <!-- Panel de Monitoreo en Tiempo Real -->
                         <section class="card monitoring-card">
@@ -182,7 +208,7 @@
                                     <span id="metric-max" class="metric-value">0</span>
                                 </div>
                                 <div class="metric-box">
-                                    <span class="metric-title">Rentabilidad Mínima</span>
+                                    <span class="metric-title">Mínimo Cuenta</span>
                                     <span id="metric-min" class="metric-value">0</span>
                                 </div>
                                 <div class="metric-box">
@@ -249,7 +275,36 @@
                             </section>
                         </div>
 
-                    </div>
+                        </div>
+                    </section>
+
+                    <section id="section-history" class="dashboard-section hidden">
+                        <section class="card">
+                            <h3>Historial de Flujo</h3>
+                            <p class="subtitle">Movimientos registrados desde Arduino fisico o simulador web.</p>
+                            <div class="table-container">
+                                <table id="history-table">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Tipo</th>
+                                            <th>Fecha y Hora</th>
+                                            <th>Negocio</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </section>
+                    </section>
+
+                    <section id="section-stats" class="dashboard-section hidden">
+                        <section class="card chart-card">
+                            <h3>Gráfica Estadística Mensual</h3>
+                            <p class="subtitle">Volumen diario de ingresos del mes actual.</p>
+                            <canvas id="graficaIngresos"></canvas>
+                        </section>
+                    </section>
                 </div>
 
             </main>
@@ -267,10 +322,6 @@
                 <div class="form-group">
                     <label for="edit-biz-max">Aforo Máximo</label>
                     <input type="number" id="edit-biz-max" min="1" required>
-                </div>
-                <div class="form-group">
-                    <label for="edit-biz-min">Mínimo para Ganancias</label>
-                    <input type="number" id="edit-biz-min" min="0" required>
                 </div>
                 <div class="modal-buttons">
                     <button type="button" id="btn-close-modal" class="btn btn-secondary">Cancelar</button>

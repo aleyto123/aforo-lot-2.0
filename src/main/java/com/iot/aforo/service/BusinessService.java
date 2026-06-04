@@ -1,6 +1,7 @@
 package com.iot.aforo.service;
 
 import com.iot.aforo.model.Business;
+import com.iot.aforo.model.TipoRegistro;
 import com.iot.aforo.repository.BusinessRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -11,11 +12,13 @@ public class BusinessService {
 
     private final BusinessRepository businessRepository;
     private final AlertService alertService;
+    private final AforoRegistroService aforoRegistroService;
 
     @Autowired
-    public BusinessService(BusinessRepository businessRepository, AlertService alertService) {
+    public BusinessService(BusinessRepository businessRepository, AlertService alertService, AforoRegistroService aforoRegistroService) {
         this.businessRepository = businessRepository;
         this.alertService = alertService;
+        this.aforoRegistroService = aforoRegistroService;
     }
 
     public Business getBusiness(Long id) {
@@ -28,14 +31,20 @@ public class BusinessService {
         return businessRepository.save(business);
     }
 
+    public Business createBusiness(String name, String category, String location, int maxCapacity) {
+        Business business = new Business(name, category, location, maxCapacity);
+        return businessRepository.save(business);
+    }
+
     @Transactional
     public Business registerEntry(Long businessId) {
         Business business = getBusiness(businessId);
         business.incrementEntries();
+        aforoRegistroService.registrarMovimiento(businessId, TipoRegistro.ENTRADA);
         
         // Comprobar si se superó el límite de aforo
         if (business.getCurrentCount() > business.getMaxCapacity()) {
-            String alertMsg = String.format("¡ALERTA DE CAPACIDAD! El negocio '%s' ha superado el aforo máximo. Personas adentro: %d, Capacidad límite: %d.", 
+            String alertMsg = String.format("¡ADVERTENCIA: Capacidad Máxima superada en tu establecimiento! El negocio '%s' registra %d personas y su límite es %d.",
                     business.getName(), business.getCurrentCount(), business.getMaxCapacity());
             alertService.createAlert(businessId, alertMsg);
         }
@@ -47,6 +56,7 @@ public class BusinessService {
     public Business registerExit(Long businessId) {
         Business business = getBusiness(businessId);
         business.incrementExits();
+        aforoRegistroService.registrarMovimiento(businessId, TipoRegistro.SALIDA);
         return businessRepository.save(business);
     }
 
@@ -55,6 +65,13 @@ public class BusinessService {
         Business business = getBusiness(businessId);
         business.setMaxCapacity(maxCapacity);
         business.setMinCapacityProfit(minCapacityProfit);
+        return businessRepository.save(business);
+    }
+
+    @Transactional
+    public Business updateConfig(Long businessId, int maxCapacity) {
+        Business business = getBusiness(businessId);
+        business.setMaxCapacity(maxCapacity);
         return businessRepository.save(business);
     }
 

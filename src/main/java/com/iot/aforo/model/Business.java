@@ -15,6 +15,8 @@ public class Business {
     private Long id;
 
     private String name;
+    private String category;
+    private String location;
     private int maxCapacity;
     private int minCapacityProfit;
     private int currentCount;
@@ -26,8 +28,21 @@ public class Business {
 
     public Business(String name, int maxCapacity, int minCapacityProfit) {
         this.name = name;
+        this.category = "GENERAL";
+        this.location = "LIMA";
         this.maxCapacity = maxCapacity;
         this.minCapacityProfit = minCapacityProfit;
+        this.currentCount = 0;
+        this.totalEntriesToday = 0;
+        this.totalExitsToday = 0;
+    }
+
+    public Business(String name, String category, String location, int maxCapacity) {
+        this.name = name;
+        this.category = normalizeCategory(category);
+        this.location = location;
+        this.maxCapacity = maxCapacity;
+        this.minCapacityProfit = 0;
         this.currentCount = 0;
         this.totalEntriesToday = 0;
         this.totalExitsToday = 0;
@@ -48,6 +63,22 @@ public class Business {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = normalizeCategory(category);
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
     }
 
     public int getMaxCapacity() {
@@ -100,5 +131,12 @@ public class Business {
             this.currentCount--;
         }
         this.totalExitsToday++;
+    }
+
+    private String normalizeCategory(String category) {
+        if (category == null || category.isBlank()) {
+            return "GENERAL";
+        }
+        return category.trim().toUpperCase();
     }
 }

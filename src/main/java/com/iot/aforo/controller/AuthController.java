@@ -38,6 +38,7 @@ public class AuthController {
             response.put("username", user.getUsername());
             response.put("role", user.getRole());
             response.put("businessId", user.getBusinessId());
+            response.put("minCapacityPeople", user.getMinCapacityPeople());
             return ResponseEntity.ok(response);
         } else {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Credenciales incorrectas.");

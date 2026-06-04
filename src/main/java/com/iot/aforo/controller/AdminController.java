@@ -38,20 +38,20 @@ public class AdminController {
     @PostMapping("/businesses")
     public ResponseEntity<Business> createBusiness(@RequestBody Map<String, Object> body) {
         String name = (String) body.get("name");
-        int maxCapacity = (int) body.get("maxCapacity");
-        int minCapacityProfit = (int) body.get("minCapacityProfit");
+        String category = (String) body.get("category");
+        String location = (String) body.get("location");
+        int maxCapacity = toInt(body.get("maxCapacity"), 1);
         
-        Business business = businessService.createBusiness(name, maxCapacity, minCapacityProfit);
+        Business business = businessService.createBusiness(name, category, location, maxCapacity);
         return ResponseEntity.ok(business);
     }
 
-    // Configurar aforo y ganancias mínimas de un negocio
+    // Configurar el aforo maximo operativo de un negocio
     @PutMapping("/businesses/{id}/config")
     public ResponseEntity<Business> updateConfig(@PathVariable Long id, @RequestBody Map<String, Integer> config) {
         try {
             int maxCapacity = config.get("maxCapacity");
-            int minCapacityProfit = config.get("minCapacityProfit");
-            Business business = businessService.updateConfig(id, maxCapacity, minCapacityProfit);
+            Business business = businessService.updateConfig(id, maxCapacity);
             return ResponseEntity.ok(business);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.notFound().build();
@@ -97,18 +97,34 @@ public class AdminController {
             String username = body.get("username");
             String password = body.get("password");
             String businessIdStr = body.get("businessId");
+            String minCapacityPeopleStr = body.get("minCapacityPeople");
             
             Long businessId = null;
             if (businessIdStr != null && !businessIdStr.isEmpty()) {
                 businessId = Long.parseLong(businessIdStr);
             }
+
+            int minCapacityPeople = 0;
+            if (minCapacityPeopleStr != null && !minCapacityPeopleStr.isBlank()) {
+                minCapacityPeople = Integer.parseInt(minCapacityPeopleStr);
+            }
             
-            User user = userService.createUser(username, password, roleRequested, businessId);
+            User user = userService.createUser(username, password, roleRequested, businessId, minCapacityPeople);
             return ResponseEntity.ok(user);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al crear usuario: " + e.getMessage());
         }
+    }
+
+    private int toInt(Object value, int defaultValue) {
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        if (value instanceof String text && !text.isBlank()) {
+            return Integer.parseInt(text);
+        }
+        return defaultValue;
     }
 }

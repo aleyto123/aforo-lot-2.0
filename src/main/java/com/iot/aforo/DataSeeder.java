@@ -32,12 +32,12 @@ public class DataSeeder implements CommandLineRunner {
 
         // Crear negocio de prueba y su dueño si no existen
         if (businessRepository.count() == 0) {
-            Business business = new Business("Tienda de Ropa Ronyc", 10, 3);
+            Business business = new Business("Tienda de Ropa Ronyc", "BODEGA", "LIMA", 10);
             business = businessRepository.save(business);
             System.out.println(">>> Sembrador: Negocio de prueba creado: " + business.getName() + " (ID: " + business.getId() + ")");
 
             if (userRepository.findByUsername("owner").isEmpty()) {
-                User owner = new User("owner", "owner123", "USER", business.getId());
+                User owner = new User("owner", "owner123", "USER", business.getId(), 3);
                 userRepository.save(owner);
                 System.out.println(">>> Sembrador: Dueño de negocio creado por defecto (owner / owner123)");
             }

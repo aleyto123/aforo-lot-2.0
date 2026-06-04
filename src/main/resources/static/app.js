@@ -4,6 +4,15 @@ const API_BASE = '';
 // State management
 let currentUser = null;
 let pollingInterval = null;
+let ingresosChart = null;
+let activeDashboardSection = 'control';
+const notifiedAlertIds = new Set();
+const departamentosPeru = [
+    'AMAZONAS', 'ANCASH', 'APURIMAC', 'AREQUIPA', 'AYACUCHO', 'CAJAMARCA', 'CALLAO',
+    'CUSCO', 'HUANCAVELICA', 'HUANUCO', 'ICA', 'JUNIN', 'LA LIBERTAD', 'LAMBAYEQUE',
+    'LIMA', 'LORETO', 'MADRE DE DIOS', 'MOQUEGUA', 'PASCO', 'PIURA', 'PUNO',
+    'SAN MARTIN', 'TACNA', 'TUMBES', 'UCAYALI'
+];
 
 // DOM Elements
 const loginView = document.getElementById('login-view');
@@ -14,11 +23,16 @@ const dashboardTitle = document.getElementById('dashboard-title');
 const welcomeMsg = document.getElementById('welcome-msg');
 const userBadge = document.getElementById('user-badge');
 const btnLogout = document.getElementById('btn-logout');
+const btnMenu = document.getElementById('btn-menu');
+const sidebar = document.getElementById('sidebar');
+const sidebarLinks = document.querySelectorAll('.sidebar-link');
+const toastContainer = document.getElementById('toast-container');
 
 // Admin Panel Elements
 const adminPanel = document.getElementById('admin-panel');
 const createBusinessForm = document.getElementById('create-business-form');
 const businessesTable = document.querySelector('#businesses-table tbody');
+const bizLocationSelect = document.getElementById('biz-location');
 const createUserForm = document.getElementById('create-user-form');
 const newRoleSelect = document.getElementById('new-role');
 const optRoleAdmin = document.getElementById('opt-role-admin');
@@ -44,6 +58,7 @@ const btnSimExit = document.getElementById('btn-sim-exit');
 const btnEndOfDay = document.getElementById('btn-end-of-day');
 const btnResetCounts = document.getElementById('btn-reset-counts');
 const alertsContainer = document.getElementById('alerts-container');
+const historyTable = document.querySelector('#history-table tbody');
 
 // Modal Elements
 const editBusinessModal = document.getElementById('edit-business-modal');
@@ -51,13 +66,14 @@ const editBusinessForm = document.getElementById('edit-business-form');
 const modalBizTitle = document.getElementById('modal-biz-title');
 const editBizId = document.getElementById('edit-biz-id');
 const editBizMax = document.getElementById('edit-biz-max');
-const editBizMin = document.getElementById('edit-biz-min');
 const btnCloseModal = document.getElementById('btn-close-modal');
 
 /* ==========================================================================
    INITIALIZATION & AUTO-LOGIN
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
+    populateDepartments();
+
     // Check if user is already logged in
     const savedUser = localStorage.getItem('aforo_user');
     if (savedUser) {

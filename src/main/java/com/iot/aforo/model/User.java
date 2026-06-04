@@ -18,6 +18,7 @@ public class User {
     private String password;
     private String role; // "ADMIN" o "USER"
     private Long businessId; // Asociado a un negocio si el rol es USER
+    private int minCapacityPeople;
 
     public User() {
     }
@@ -27,6 +28,15 @@ public class User {
         this.password = password;
         this.role = role;
         this.businessId = businessId;
+        this.minCapacityPeople = 0;
+    }
+
+    public User(String username, String password, String role, Long businessId, int minCapacityPeople) {
+        this.username = username;
+        this.password = password;
+        this.role = role;
+        this.businessId = businessId;
+        this.minCapacityPeople = Math.max(minCapacityPeople, 0);
     }
 
     // Getters and Setters
@@ -68,5 +78,13 @@ public class User {
 
     public void setBusinessId(Long businessId) {
         this.businessId = businessId;
+    }
+
+    public int getMinCapacityPeople() {
+        return minCapacityPeople;
+    }
+
+    public void setMinCapacityPeople(int minCapacityPeople) {
+        this.minCapacityPeople = Math.max(minCapacityPeople, 0);
     }
 }

@@ -25,10 +25,14 @@ public class UserService {
     }
 
     public User createUser(String username, String password, String role, Long businessId) {
+        return createUser(username, password, role, businessId, 0);
+    }
+
+    public User createUser(String username, String password, String role, Long businessId, int minCapacityPeople) {
         if (userRepository.findByUsername(username).isPresent()) {
             throw new IllegalArgumentException("El usuario ya existe");
         }
-        User user = new User(username, password, role, businessId);
+        User user = new User(username, password, role, businessId, minCapacityPeople);
         return userRepository.save(user);
     }
 

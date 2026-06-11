@@ -47,7 +47,7 @@ body {
     overflow-x: hidden;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
 }
 
 /* Stunning Ambient Glow Background */
@@ -314,6 +314,61 @@ select:focus {
    ========================================================================== */
 #dashboard-view {
     width: 100%;
+    display: block;
+}
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.sidebar-nav {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.sidebar-link {
+    border: 1px solid var(--border-color);
+    background: rgba(15, 23, 42, 0.65);
+    color: var(--text-primary);
+    border-radius: 999px;
+    padding: 10px 14px;
+    cursor: pointer;
+    font-family: var(--font-primary);
+    font-weight: 600;
+}
+
+.sidebar-link.active,
+.sidebar-link:hover {
+    background: linear-gradient(135deg, rgba(124, 92, 255, 0.18), rgba(16, 185, 129, 0.15));
+    border-color: var(--color-primary-glow);
+}
+
+.dashboard-section {
+    display: block;
+}
+
+.chart-card canvas {
+    min-height: 320px;
+}
+
+.toast-container {
+    position: fixed;
+    top: 14px;
+    right: 14px;
+    z-index: 1100;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.empty-state {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 18px 0;
 }
 
 .dashboard-header {
@@ -455,13 +510,15 @@ tr:hover td {
 }
 
 @media (max-width: 900px) {
-    .user-sections-grid {
-        display: flex;
-        flex-direction: column;
-    }
+    .user-sections-grid,
     .admin-sections-grid {
         display: flex;
         flex-direction: column;
+    }
+
+    .sidebar-nav {
+        flex-direction: column;
+        align-items: stretch;
     }
 }
 

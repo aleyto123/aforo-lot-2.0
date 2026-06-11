@@ -59,6 +59,10 @@ const btnEndOfDay = document.getElementById('btn-end-of-day');
 const btnResetCounts = document.getElementById('btn-reset-counts');
 const alertsContainer = document.getElementById('alerts-container');
 const historyTable = document.querySelector('#history-table tbody');
+const sectionControl = document.getElementById('section-control');
+const sectionHistory = document.getElementById('section-history');
+const sectionStats = document.getElementById('section-stats');
+const chartCanvas = document.getElementById('graficaIngresos');
 
 // Modal Elements
 const editBusinessModal = document.getElementById('edit-business-modal');
@@ -73,6 +77,7 @@ const btnCloseModal = document.getElementById('btn-close-modal');
    ========================================================================== */
 document.addEventListener('DOMContentLoaded', () => {
     populateDepartments();
+    bindSidebarNavigation();
 
     // Check if user is already logged in
     const savedUser = localStorage.getItem('aforo_user');
@@ -139,6 +144,35 @@ function showLoginError(msg) {
 /* ==========================================================================
    NAVIGATION & ROLE ROUTING
    ========================================================================== */
+function bindSidebarNavigation() {
+    sidebarLinks.forEach(link => {
+        link.addEventListener('click', () => {
+            const section = link.dataset.section || 'control';
+            openDashboardSection(section);
+        });
+    });
+}
+
+function openDashboardSection(section) {
+    activeDashboardSection = section;
+    sidebarLinks.forEach(link => link.classList.toggle('active', link.dataset.section === section));
+
+    [sectionControl, sectionHistory, sectionStats].forEach(sectionEl => {
+        if (!sectionEl) return;
+        sectionEl.classList.toggle('hidden', sectionEl.id !== `section-${section}`);
+    });
+
+    requestAnimationFrame(() => {
+        if (section === 'history' && currentUser?.businessId) {
+            setTimeout(() => loadHistoryData(), 100);
+        }
+
+        if (section === 'stats' && currentUser?.businessId) {
+            setTimeout(() => loadStatsData(), 100);
+        }
+    });
+}
+
 function showDashboard() {
     loginView.classList.add('hidden');
     dashboardView.classList.remove('hidden');
@@ -166,7 +200,8 @@ function showDashboard() {
     } else if (currentUser.role === 'USER') {
         userPanel.classList.remove('hidden');
         dashboardTitle.textContent = 'Monitoreo de Aforo de mi Negocio';
-        
+        openDashboardSection('control');
+
         // Load user business data & start real-time updates
         loadUserBusinessDashboard();
         startRealTimeUpdates();
@@ -339,24 +374,54 @@ editBusinessForm.addEventListener('submit', async (e) => {
    BUSINESS OWNER (USER) DASHBOARD LOGIC
    ========================================================================== */
 async function loadUserBusinessDashboard() {
-    if (!currentUser.businessId) return;
-    
+    if (!currentUser?.businessId) return;
+
     try {
-        // 1. Fetch current status
         const statusRes = await fetch(`${API_BASE}/api/business/${currentUser.businessId}/status`);
         if (statusRes.ok) {
             const status = await statusRes.json();
             renderUserDashboard(status);
         }
-        
-        // 2. Fetch alerts
+
         const alertsRes = await fetch(`${API_BASE}/api/business/${currentUser.businessId}/alerts`);
         if (alertsRes.ok) {
             const alerts = await alertsRes.json();
             renderAlertsList(alerts);
         }
+
+        if (activeDashboardSection === 'history') {
+            await loadHistoryData();
+        }
+
+        if (activeDashboardSection === 'stats') {
+            await loadStatsData();
+        }
     } catch (err) {
         console.error('Error cargando panel de negocio:', err);
+    }
+}
+
+async function loadHistoryData() {
+    if (!currentUser?.businessId) return;
+    try {
+        const response = await fetch(`${API_BASE}/api/iot/business/${currentUser.businessId}/history`);
+        if (response.ok) {
+            renderHistoryTable(await response.json());
+        }
+    } catch (err) {
+        console.error('Error cargando historial:', err);
+    }
+}
+
+async function loadStatsData() {
+    if (!currentUser?.businessId) return;
+    try {
+        const response = await fetch(`${API_BASE}/api/iot/business/${currentUser.businessId}/stats/monthly-entries`);
+        if (response.ok) {
+            renderMonthlyChart(await response.json());
+        }
+    } catch (err) {
+        console.error('Error cargando estadísticas:', err);
     }
 }
 
@@ -407,6 +472,69 @@ function renderUserDashboard(status) {
     } else {
         badgeCapacity.classList.add('hidden');
     }
+}
+
+function renderHistoryTable(records) {
+    if (!historyTable) return;
+    historyTable.innerHTML = '';
+
+    if (!records || records.length === 0) {
+        historyTable.innerHTML = '<tr><td colspan="4" class="empty-state">Aún no hay registros de entrada o salida.</td></tr>';
+        return;
+    }
+
+    records.forEach(item => {
+        const row = document.createElement('tr');
+        const tipo = item.tipo === 'ENTRADA' ? 'Entrada' : 'Salida';
+        const fecha = new Date(item.fechaHora || item.fecha_hora).toLocaleString('es-PE');
+        row.innerHTML = `
+            <td>${item.id}</td>
+            <td>${tipo}</td>
+            <td>${fecha}</td>
+            <td>${item.businessId || currentUser.businessId}</td>
+        `;
+        historyTable.appendChild(row);
+    });
+}
+
+function renderMonthlyChart(stats) {
+    if (!chartCanvas) return;
+
+    const labels = Object.keys(stats || {}).map(day => `Día ${day}`);
+    const data = Object.values(stats || {}).map(value => Number(value) || 0);
+
+    chartCanvas.style.width = '100%';
+    chartCanvas.style.height = '320px';
+
+    if (ingresosChart) {
+        ingresosChart.destroy();
+    }
+
+    const context = chartCanvas.getContext('2d');
+    if (!context) return;
+
+    ingresosChart = new Chart(context, {
+        type: 'bar',
+        data: {
+            labels,
+            datasets: [{
+                label: 'Entradas por día',
+                data,
+                backgroundColor: 'rgba(124, 92, 255, 0.45)',
+                borderColor: 'rgba(124, 92, 255, 1)',
+                borderWidth: 1,
+                borderRadius: 8
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { labels: { color: '#e5eefb' } } },
+            scales: {
+                x: { ticks: { color: '#cbd5e1' }, grid: { color: 'rgba(148, 163, 184, 0.12)' } },
+                y: { ticks: { color: '#cbd5e1' }, grid: { color: 'rgba(148, 163, 184, 0.12)' } }
+            }
+        }
+    });
 }
 
 function renderAlertsList(alerts) {
@@ -517,8 +645,8 @@ function startRealTimeUpdates() {
     if (pollingInterval) {
         clearInterval(pollingInterval);
     }
-    // Poll business status & alerts every 2.5 seconds
+    // Poll only the core status/alerts to keep the UI responsive.
     pollingInterval = setInterval(() => {
         loadUserBusinessDashboard();
-    }, 2500);
+    }, 5000);
 }

@@ -1,23 +1,29 @@
 package com.iot.aforo.service;
 
-import com.iot.aforo.model.Business;
-import com.iot.aforo.model.TipoRegistro;
-import com.iot.aforo.repository.BusinessRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.iot.aforo.model.Business;
+import com.iot.aforo.model.TipoRegistro;
+import com.iot.aforo.repository.BusinessRepository;
 
 @Service
 public class BusinessService {
 
     private final BusinessRepository businessRepository;
     private final AlertService alertService;
+    private final AlertaAforoService alertaAforoService;
     private final AforoRegistroService aforoRegistroService;
 
     @Autowired
-    public BusinessService(BusinessRepository businessRepository, AlertService alertService, AforoRegistroService aforoRegistroService) {
+    public BusinessService(BusinessRepository businessRepository,
+                           AlertService alertService,
+                           AlertaAforoService alertaAforoService,
+                           AforoRegistroService aforoRegistroService) {
         this.businessRepository = businessRepository;
         this.alertService = alertService;
+        this.alertaAforoService = alertaAforoService;
         this.aforoRegistroService = aforoRegistroService;
     }
 
@@ -47,6 +53,7 @@ public class BusinessService {
             String alertMsg = String.format("¡ADVERTENCIA: Capacidad Máxima superada en tu establecimiento! El negocio '%s' registra %d personas y su límite es %d.",
                     business.getName(), business.getCurrentCount(), business.getMaxCapacity());
             alertService.createAlert(businessId, alertMsg);
+            alertaAforoService.crearAlerta(businessId, alertMsg);
         }
         
         return businessRepository.save(business);

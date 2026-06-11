@@ -1,12 +1,14 @@
 package com.iot.aforo.service;
 
-import com.fazecast.jSerialComm.SerialPort;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+
+import com.fazecast.jSerialComm.SerialPort;
+
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
 
 @Service
 public class ArduinoListenerService {
@@ -17,6 +19,7 @@ public class ArduinoListenerService {
     private final BusinessService businessService;
     private final String arduinoPortName;
     private final Long businessId;
+    private final boolean arduinoEnabled;
     private volatile boolean running;
     private SerialPort serialPort;
     private Thread listenerThread;
@@ -24,18 +27,29 @@ public class ArduinoListenerService {
     public ArduinoListenerService(
             BusinessService businessService,
             @Value("${arduino.port:COM3}") String arduinoPortName,
-            @Value("${arduino.business-id:1}") Long businessId
+            @Value("${arduino.business-id:1}") Long businessId,
+            @Value("${arduino.enabled:false}") boolean arduinoEnabled
     ) {
         this.businessService = businessService;
         this.arduinoPortName = arduinoPortName;
         this.businessId = businessId;
+        this.arduinoEnabled = arduinoEnabled;
     }
 
     @PostConstruct
     public void start() {
-        listenerThread = new Thread(this::listenSerialPort, "arduino-listener-thread");
-        listenerThread.setDaemon(true);
-        listenerThread.start();
+        if (!arduinoEnabled) {
+            log.info("Listener serial Arduino deshabilitado por configuración (arduino.enabled=false). El simulador web seguirá funcionando.");
+            return;
+        }
+
+        try {
+            listenerThread = new Thread(this::listenSerialPort, "arduino-listener-thread");
+            listenerThread.setDaemon(true);
+            listenerThread.start();
+        } catch (Throwable ex) {
+            log.warn("No se pudo iniciar el listener serial del Arduino. El servidor continuará sin el sensor físico.", ex);
+        }
     }
 
     @PreDestroy
@@ -48,6 +62,11 @@ public class ArduinoListenerService {
 
     private void listenSerialPort() {
         try {
+            if (arduinoPortName == null || arduinoPortName.isBlank()) {
+                log.warn("No hay puerto Arduino configurado; se omite el listener serial.");
+                return;
+            }
+
             serialPort = SerialPort.getCommPort(arduinoPortName);
             serialPort.setBaudRate(BAUD_RATE);
             serialPort.setComPortTimeouts(SerialPort.TIMEOUT_READ_SEMI_BLOCKING, 1000, 0);
@@ -72,7 +91,7 @@ public class ArduinoListenerService {
                     processSignal((char) buffer[i]);
                 }
             }
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             log.warn("No se pudo iniciar o mantener la lectura serial del Arduino en {}. El servidor continua activo.", arduinoPortName, ex);
         } finally {
             if (serialPort != null && serialPort.isOpen()) {

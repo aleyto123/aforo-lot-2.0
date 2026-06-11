@@ -1,16 +1,23 @@
 package com.iot.aforo.controller;
 
-import com.iot.aforo.model.AforoRegistro;
-import com.iot.aforo.model.Alert;
-import com.iot.aforo.model.Business;
-import com.iot.aforo.service.AforoRegistroService;
-import com.iot.aforo.service.AlertService;
-import com.iot.aforo.service.BusinessService;
 import java.util.List;
 import java.util.Map;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.CrossOrigin;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.iot.aforo.model.AforoRegistro;
+import com.iot.aforo.model.AlertaAforo;
+import com.iot.aforo.model.Business;
+import com.iot.aforo.service.AforoRegistroService;
+import com.iot.aforo.service.AlertaAforoService;
+import com.iot.aforo.service.BusinessService;
 
 @RestController
 @RequestMapping("/api/iot")
@@ -18,13 +25,15 @@ import org.springframework.web.bind.annotation.*;
 public class IoTController {
 
     private final BusinessService businessService;
-    private final AlertService alertService;
+    private final AlertaAforoService alertaAforoService;
     private final AforoRegistroService aforoRegistroService;
 
     @Autowired
-    public IoTController(BusinessService businessService, AlertService alertService, AforoRegistroService aforoRegistroService) {
+    public IoTController(BusinessService businessService,
+                         AlertaAforoService alertaAforoService,
+                         AforoRegistroService aforoRegistroService) {
         this.businessService = businessService;
-        this.alertService = alertService;
+        this.alertaAforoService = alertaAforoService;
         this.aforoRegistroService = aforoRegistroService;
     }
 
@@ -52,8 +61,8 @@ public class IoTController {
 
     // Alertas activas no resueltas para polling del frontend IoT.
     @GetMapping("/business/{id}/alerts")
-    public ResponseEntity<List<Alert>> getUnreadAlerts(@PathVariable Long id) {
-        return ResponseEntity.ok(alertService.getActiveAlertsForBusiness(id));
+    public ResponseEntity<List<AlertaAforo>> getUnreadAlerts(@PathVariable Long id) {
+        return ResponseEntity.ok(alertaAforoService.listarNoLeidas(id));
     }
 
     // Historial cronologico descendente de entradas y salidas.
